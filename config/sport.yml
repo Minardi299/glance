@@ -580,7 +580,7 @@
                           {{ if lt $i 9 }}  Inning {{ add $i 1 }}: {{ $inning.Int "home.runs" }}{{ else }}  Inning {{ add $i 1 }}: {{ $inning.Int "home.runs" }}{{ end }}
                         {{ end }}"
                       {{ end }}>
-                  {{/* Match NHL layout: headline row + score row (size-h3, 50px logos, 25px scores) */}}
+                  {{/* Match NHL layout: headline row + score row (size-h3, 30px logos, 25px scores) */}}
                   <table>
                     <tr>
                       <td>
@@ -615,7 +615,7 @@
                   <table>
                     <tr>
                       <td>
-                        <img style="float:left" width="50" height="auto" src='{{ if eq $awayCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=50&w=50{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $awayCode }}.png&h=50&w=50{{ end }}' alt='{{ $awayAbr }}'/>
+                        <img style="float:left" width="30" height="auto" src='{{ if eq $awayCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=49&w=49{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $awayCode }}.png&h=49&w=49{{ end }}' alt='{{ $awayAbr }}'/>
                       </td>
                       <td>
                         {{ if ne $abs "Preview" }}
@@ -633,7 +633,7 @@
                         {{ end }}
                       </td>
                       <td>
-                        <img style="float:left" width="50" height="auto" src='{{ if eq $homeCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=50&w=50{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $homeCode }}.png&h=50&w=50{{ end }}' alt='{{ $homeAbr }}'/>
+                        <img style="float:left" width="30" height="auto" src='{{ if eq $homeCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=49&w=49{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $homeCode }}.png&h=49&w=49{{ end }}' alt='{{ $homeAbr }}'/>
                       </td>
                       <td>
                         {{ if eq $abs "Preview" }}
