@@ -3,4 +3,27 @@
 .nfl-game-row {
     border-bottom: 1px solid var(--glance-divider);
     white-space: normal;
+    min-width: 0; /* let the narrow column shrink so wrapping applies */
+}
+
+/* NFL: fixed layout + full-width cell so long matchup titles wrap instead of overflowing */
+.nfl-game-row > table:first-of-type {
+    width: 100%;
+    table-layout: fixed;
+}
+.nfl-game-row > table:first-of-type td {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+}
+.nfl-game-row > table:first-of-type .nfl-matchup-title {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+}
+.nfl-game-row > table:first-of-type tr:nth-child(2) td .size-h6 {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
 }
