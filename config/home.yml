@@ -14,8 +14,8 @@
             name: Rocket Lab
           - symbol: PNG.V
             name: Kraken Robotics
-          - symbol: AAPL
-            name: Apple
+          - symbol: MSFT
+            name: Microsoft
           - symbol: XEQT.TO
             name: iShares Core Equity ETF Portfolio
 
@@ -41,6 +41,21 @@
 
     - size: full
       widgets:
+        - type: server-stats
+          title: Server
+          servers:
+            - type: local
+              name: Server Ubuntu
+              hide-mountpoints-by-default: true
+              mountpoints:
+                "/":
+                  name: Root
+                  hide: false
+            - type: remote
+              name: Linux Mint
+              url: http://100.75.26.76:27973
+              icon: si:linuxmint
+              timeout: 10s
         - type: monitor
           cache: 1m
           title: Services
