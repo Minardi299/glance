@@ -528,7 +528,7 @@
                       </li>
                       {{ end }}
                     </ul>
-    - size: small
+    - size: full
       widgets:
         - type: custom-api
           title: MLB SCOREBOARD
@@ -641,4 +641,3 @@
             </table>
               </li>
             {{ end }}
-
