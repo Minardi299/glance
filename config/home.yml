@@ -8,16 +8,16 @@
         new-tab: true
       - type: markets
         markets:
-          - symbol: INTC
-            name: Intel
-          - symbol: RKLB
-            name: Rocket Lab
-          - symbol: PNG.V
-            name: Kraken Robotics
-          - symbol: MSFT
-            name: Microsoft
-          - symbol: XEQT.TO
-            name: iShares Core Equity ETF Portfolio
+          - symbol: SPY
+            name: S&P 500
+          - symbol: BTC-USD
+            name: Bitcoin
+            chart-link: https://www.tradingview.com/chart/?symbol=INDEX:BTCUSD
+          - symbol: NVDA
+            name: NVIDIA
+          - symbol: AAPL
+            symbol-link: https://www.google.com/search?tbm=nws&q=apple
+            name: Apple
 
   columns:
     - size: small
