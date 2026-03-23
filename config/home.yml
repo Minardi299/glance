@@ -60,12 +60,17 @@
                   url: https://web.starb.ca
                 - title: Maxim's blog
                   url: https://maxim.starb.ca
+                  icon: https://imgs.search.brave.com/lvMbrH7w10H5kdcCvz0BXhT10t2YQDrhVh1nT0ZJstw/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/amlubGkuaW8vaW1h/Z2VzLzIwMjMvMDgv/MjkvamVsbHlmaW5f/bG9nby5tZC5wbmc
                 - title: n8n
                   url: https://n8n.starb.ca
                 - title: Bloxtr8
                   url: https://pilot.bloxtr8.com
                 - title: Bloxtr8 landing page
                   url: https://bloxtr8.com
+                - title: F1 API
+                  url: https://f1-api.starb.ca/f1/next_race/
+                - title: Stremio server
+                  url: https://stremio.starb.ca
                 - title: passbolt
                   url: https://passbolt.starb.ca
             - type: docker-containers
