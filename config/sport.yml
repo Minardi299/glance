@@ -404,76 +404,77 @@
                     </table>
                     </li>
                   {{ end }}
-#            - type: group if you want to group the widgets into tab, then delete the max-columns
             - type: split-column
               max-columns: 1
               widgets:
-                - type: custom-api
-                  title: Next Race
-                  cache: 5m
-                  url: ${F1_API_URL}/f1/next_race/
-                  template: |
-                    <div class="flex flex-column gap-10">
-                      {{ $session := index (.JSON.Array "race") 0 }}
-                      <p class="size-h5">
-                        {{ .JSON.String "season" }}, Round {{ .JSON.String "round" }}
-                      </p>
+                - type: group
+                  widgets:
+                    - type: custom-api
+                      title: Next Race
+                      cache: 5m
+                      url: ${F1_API_URL}/f1/next_race/
+                      template: |
+                        <div class="flex flex-column gap-10">
+                          {{ $session := index (.JSON.Array "race") 0 }}
+                          <p class="size-h5">
+                            {{ .JSON.String "season" }}, Round {{ .JSON.String "round" }}
+                          </p>
 
-                      <div class="margin-block-4">
-                        <p class="color-highlight">{{ $session.String "raceName" }}</p>
-                        <p class="color-primary">
-                          <span>
-                            {{ .JSON.String "next_event.session" }}
-                          </span>
-                          {{ $datetime := .JSON.String "next_event.datetime" }}
-                          <span
-                            class="color-highlight"
-                            {{ parseRelativeTime "rfc3339" $datetime }}
-                          ></span>
-                        </p>
-                        <p class="size-h5">
-                          {{ .JSON.String "next_event.date" }} @  {{ .JSON.String "next_event.time" }}
-                        </p>
+                          <div class="margin-block-4">
+                            <p class="color-highlight">{{ $session.String "raceName" }}</p>
+                            <p class="color-primary">
+                              <span>
+                                {{ .JSON.String "next_event.session" }}
+                              </span>
+                              {{ $datetime := .JSON.String "next_event.datetime" }}
+                              <span
+                                class="color-highlight"
+                                {{ parseRelativeTime "rfc3339" $datetime }}
+                              ></span>
+                            </p>
+                            <p class="size-h5">
+                              {{ .JSON.String "next_event.date" }} @  {{ .JSON.String "next_event.time" }}
+                            </p>
 
-                        <div style="margin-block: 1rem;">
-                          <img
-                            src="${F1_API_URL}/f1/next_map/"
-                            onerror="this.style.display='none'"
-                            style="max-width: 100%; height: auto; border-radius: 8px;"
-                          />
+                            <div style="margin-block: 1rem;">
+                              <img
+                                src="${F1_API_URL}/f1/next_map/"
+                                onerror="this.style.display='none'"
+                                style="max-width: 100%; height: auto; border-radius: 8px;"
+                              />
+                            </div>
+
+                            <p class="color-highlight">
+                              Circuit Details
+                            </p>
+                            <p class="size-h6">
+                              Name: {{ $session.String "circuit.circuitName" }}
+                            </p>
+                            <p class="size-h6">
+                              Lap Record: {{ $session.String "circuit.lapRecord" }}, {{ $session.String "circuit.fastestLapDriverName" }} ({{ $session.String "circuit.fastestLapYear"}})
+                            </p>
+                            <p class="size-h6">
+                              Length: {{ $session.String "laps" }} laps @ {{ $session.String "circuit.circuitLengthKm" }} KMs
+                            </p>
+                          </div>
                         </div>
 
-                        <p class="color-highlight">
-                          Circuit Details
-                        </p>
-                        <p class="size-h6">
-                          Name: {{ $session.String "circuit.circuitName" }}
-                        </p>
-                        <p class="size-h6">
-                          Lap Record: {{ $session.String "circuit.lapRecord" }}, {{ $session.String "circuit.fastestLapDriverName" }} ({{ $session.String "circuit.fastestLapYear"}})
-                        </p>
-                        <p class="size-h6">
-                          Length: {{ $session.String "laps" }} laps @ {{ $session.String "circuit.circuitLengthKm" }} KMs
-                        </p>
-                      </div>
-                    </div>
-
-                - type: custom-api
-                  title: Last Race Results
-                  cache: 1d
-                  url: https://f1api.dev/api/current/last/race
-                  template: |
-                    <div class="flex flex-column gap-10">
-                      <p class="size-h5">{{ .JSON.String "races.raceName" }}</p>
-                      <ul class="list collapsible-container" data-collapse-after="5">
-                        {{ range $i, $v := .JSON.Array "races.results" }}
-                        <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
-                          <span class="grow min-width-0">{{ .String "position" }}. {{ .String "driver.shortName" }}</span>
-                          <span class="shrink-0 text-right">{{ .String "time" }}</span>
-                        </li>
-                        {{ end }}
-                      </ul>
-                    </div>
+                    - type: custom-api
+                      title: Last Race Results
+                      cache: 1d
+                      url: https://f1api.dev/api/current/last/race
+                      template: |
+                        <div class="flex flex-column gap-10">
+                          <p class="size-h5">{{ .JSON.String "races.raceName" }}</p>
+                          <ul class="list collapsible-container" data-collapse-after="5">
+                            {{ range $i, $v := .JSON.Array "races.results" }}
+                            <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                              <span class="grow min-width-0">{{ .String "position" }}. {{ .String "driver.shortName" }}</span>
+                              <span class="shrink-0 text-right">{{ .String "time" }}</span>
+                            </li>
+                            {{ end }}
+                          </ul>
+                        </div>
 
                 - type: custom-api
                   title: Drivers Standings
