@@ -411,7 +411,7 @@
                   cache: 5m
                   url: ${F1_API_URL}/f1/next_race/
                   template: |
-                    <div class="flex flex-column gap-10">
+                    <div class="flex flex-column gap-10" style="text-align: center;">
                       {{ $session := index (.JSON.Array "race") 0 }}
                       <p class="size-h5">
                         {{ .JSON.String "season" }}, Round {{ .JSON.String "round" }}
@@ -433,7 +433,7 @@
                           {{ .JSON.String "next_event.date" }} @  {{ .JSON.String "next_event.time" }}
                         </p>
 
-                        <div style="margin-block: 1rem;">
+                        <div style="margin-block: 1rem; display: flex; justify-content: center;">
                           <img
                             src="${F1_API_URL}/f1/next_map/"
                             onerror="this.style.display='none'"
