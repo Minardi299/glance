@@ -1,0 +1,635 @@
+- name: Sport
+  width: wide
+  columns:
+    - size: full
+      widgets:
+        - type: split-column
+          max-columns: 4
+          widgets:
+            - type: custom-api
+              title: NHL SCOREBOARD
+              cache: 5s
+              url: https://api-web.nhle.com/v1/score/now
+              template: |
+                {{ $myTeam := "ALL" }}
+                {{ $games := .JSON.Array "games" }}
+                {{ define "gameItem" }}
+                  {{ $toolTipEnabled := true }}
+                  {{ $awayTeamColor := "" }}
+                  {{ $homeTeamColor := "" }}
+                  {{ $situationDescriptionHome := "" }}
+                  {{ $situationDescriptionAway := "" }}
+                  {{ $situationStrength := "" }}
+                  {{ $homeTeam := .String "homeTeam.abbrev" }}
+                  {{ $awayTeam := .String "awayTeam.abbrev" }}
+                  {{ $homeTeamScores := "" }}
+                  {{ $awayTeamScores := "" }}
+                  {{ range $index, $desc := .Array "goals" }}
+                      {{ $teamAbbrev := .String "teamAbbrev" }}
+                      {{ $playerName := .String "name.default" }}
+                      {{ $timeScored := .String "timeInPeriod" }}
+                      {{ $periodScored := .Int "period" }}
+                      {{ if eq $awayTeam $teamAbbrev }}
+                          {{ $awayTeamScores = (printf "%s %s %s(%d)" $awayTeamScores $playerName $timeScored $periodScored) }}
+                      {{ else if eq $homeTeam $teamAbbrev }}
+                          {{ $homeTeamScores = (printf "%s %s %s(%d)" $homeTeamScores $playerName $timeScored $periodScored) }}
+                      {{ end }}
+                  {{ end }}
+                  {{ $gameState := .String "gameState" }}
+                  {{ $currentLabel := "" }}
+                  {{ if or (eq $gameState "OFF") (eq $gameState "FINAL") }}
+                      {{ $lastPeriodType := .String "gameOutcome.lastPeriodType" }}
+                      {{ $currentLabel = "Final" }}
+                      {{ if or (eq $lastPeriodType "OT") (eq $lastPeriodType "SO") }}
+                          {{ $currentLabel = (printf "%s %s" $currentLabel $lastPeriodType) }}
+                      {{ end }}
+                  {{ end }}
+                  {{ if or (eq $gameState "FUT") (eq $gameState "PRE") }}
+                      {{ $gameTime := (.String "startTimeUTC" | parseTime "rfc3339").In now.Location }}
+                      {{ $currentLabel = (printf "%02d:%02d" $gameTime.Hour $gameTime.Minute) }}
+                  {{ end }}
+                  {{ if or (eq $gameState "LIVE") (eq $gameState "CRIT") }}
+                      {{ $period := .Int "period" }}
+                      {{ $periodString := .String "period" }}
+                      {{ $timeRemaining := .String "clock.timeRemaining" }}
+                      {{ $intermission := .Int "clock.inIntermission" }}
+                      {{ $periodType := .String "periodDescriptor.periodType" }}
+                      {{ if eq $period 1 }}
+                      {{ $addonValue := "st" }}
+                      {{ if eq $intermission 1 }}
+                          {{ $addonValue = printf "%s Int" $addonValue }}
+                      {{ end }}
+                      {{ $currentLabel = (printf "%s%s %s" $periodString $addonValue $timeRemaining) }}
+                      {{ else if eq $period 2 }}
+                          {{ $addonValue := "nd" }}
+                          {{ if eq $intermission 1 }}
+                              {{ $addonValue = printf "%s Int" $addonValue }}
+                          {{ end }}
+                      {{ $currentLabel = (printf "%s%s %s" $periodString $addonValue $timeRemaining) }}
+                      {{ else if eq $period 3 }}
+                          {{ $addonValue := "rd" }}
+                          {{ if eq $intermission 1 }}
+                              {{ $addonValue = printf "%s Int" $addonValue }}
+                          {{ end }}
+                      {{ $currentLabel = (printf "%s%s %s" $periodString $addonValue $timeRemaining) }}
+                      {{ else }}
+                      {{ $currentLabel = $periodType }}
+                          {{ if not (eq $periodType "SO") }}
+                              {{ $currentLabel = (printf "%s %s" $periodType $timeRemaining) }}
+                          {{ end }}
+                      {{ end }}
+                  {{ end }}
+                  {{ if .Exists "situation" }}
+                      {{ if .Exists "situation.awayTeam.situationDescriptions" }}
+                          {{ $awayTeamColor = "color-negative" }}
+                          {{ range $index, $desc := .Array "situation.awayTeam.situationDescriptions" }}
+                                {{ $situationDescriptionAway = (printf "%s %s" $situationDescriptionAway $desc.Value) }}
+                          {{ end }}
+                      {{ end }}
+                      {{ if .Exists "situation.homeTeam.situationDescriptions" }}
+                          {{ $homeTeamColor = "color-positive" }}
+                          {{ range $index, $desc := .Array "situation.homeTeam.situationDescriptions" }}
+                              {{ $situationDescriptionHome = (printf "%s %s" $situationDescriptionHome $desc.Value) }}
+                          {{ end }}
+                      {{ end }}
+                    {{ $situationStrength = concat "(" (.String "situation.awayTeam.strength") "v" (.String "situation.homeTeam.strength") ")" }}
+                  {{ end }}
+                  <table>
+                      <tr>
+                          <td>
+                              <a target="_blank" class="size-h3 color-highlight block text-truncate" href="https://www.nhl.com{{ .String "gameCenterLink" }}/">
+                                <span class= {{ $awayTeamColor }} > {{ .String "awayTeam.name.default" }} </span> vs <span class= {{ $homeTeamColor }} > {{ .String "homeTeam.name.default" }} </span>
+                              </a>
+                          </td>
+                      </tr>
+                      <tr>
+                          <td>
+                              <span class= {{ $awayTeamColor }} > {{ $situationDescriptionAway }} </span> <span class= {{ $homeTeamColor }} > {{ $situationDescriptionHome }} </span> <span> {{ .String "situation.timeRemaining" }} {{ $situationStrength }}</span>
+                          </td>
+                      </tr>
+                  </table>
+                  <table>
+                      <tr>
+                          <td data-popover-type="html">
+                              {{ if and (not (eq $awayTeamScores "")) (eq $toolTipEnabled true) }}
+                                  <div data-popover-html>
+                                    {{ $awayTeamScores }}
+                                  </div>
+                              {{ end }}
+                            <img style="float: left" width="50" height="auto" src={{ .String "awayTeam.logo" }}>
+                          </td>
+                          <td data-popover-type="html">
+                              {{ if and (not (eq $awayTeamScores "")) (eq $toolTipEnabled true) }}
+                                <div data-popover-html>
+                                  {{ $awayTeamScores }}
+                                </div>
+                              {{ end }}
+                            <p style="font-size:25px"> {{ .String "awayTeam.score" }} </p>
+                          </td>
+                          <td>
+                              <p style="font-size:25px">-</p>
+                          </td>
+                          <td data-popover-type="html">
+                            {{ if and (not (eq $homeTeamScores "")) (eq $toolTipEnabled true) }}
+                              <div data-popover-html>
+                                {{ $homeTeamScores }}
+                              </div>
+                            {{ end }}
+                            <p style="font-size:25px"> {{ .String "homeTeam.score" }} </p>
+                          </td>
+                          <td data-popover-type="html">
+                            {{ if and (not (eq $homeTeamScores "")) (eq $toolTipEnabled true) }}
+                              <div data-popover-html>
+                                {{ $homeTeamScores }}
+                              </div>
+                            {{ end }}
+                            <img style="float: left" width="50" height="auto" src={{ .String "homeTeam.logo" }}>
+                          </td>
+                          <td>
+                              {{ $currentLabel }}
+                          </td>
+                      </tr>
+                  </table>
+                {{ end }}
+
+                <ul class="list list-gap-10 collapsible-container" data-collapse-after="10">
+                {{ range $game := $games }}
+                    {{ if and (or (eq ($game.String "homeTeam.abbrev") $myTeam) (eq ($game.String "awayTeam.abbrev") $myTeam) (eq "ALL" $myTeam)) }}
+                    {{ $state := $game.String "gameState" }}
+                        {{ if not (or (eq $state "FINAL") (eq $state "OFF")) }}
+                            {{ template "gameItem" $game }}
+                        {{ end }}
+                    {{ end }}
+                {{ end }}
+                {{ range $game := $games }}
+                    {{ if and (or (eq ($game.String "homeTeam.abbrev") $myTeam) (eq ($game.String "awayTeam.abbrev") $myTeam) (eq "ALL" $myTeam)) }}
+                    {{ $state := $game.String "gameState" }}
+                        {{ if or (eq $state "FINAL") (eq $state "OFF") }}
+                            {{ template "gameItem" $game }}
+                        {{ end }}
+                    {{ end }}
+                {{ end }}
+                </ul>
+
+            - type: custom-api
+              title: NFL Scoreboard
+              url: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+              cache: 1m
+              template: |
+                {{ $events := .JSON.Array "events" }}
+                  {{ if eq (len $events) 0 }}
+                    <div>No games scheduled today.</div>
+                  {{ else }}
+                    {{ $wid := printf "nfl-%d" now.UnixNano }}
+                    <div id="{{ $wid }}" style="position:relative;padding-bottom:{{ if gt (len $events) 6 }}25px{{ else }}0px{{ end }};">
+                      <input type="checkbox" id="{{ $wid }}-cb" style="display:none"/>
+                      <ul class="visible" style="list-style:none;padding:0;margin:0;">
+                        {{ $count := 0 }}
+
+                        {{ range $i, $g := $events }}
+                          {{ if and (lt $count 6) (eq ($g.String "competitions.0.status.type.name") "STATUS_IN_PROGRESS") }}
+                            {{ template "nfl-game" $g }}
+                            {{ $count = add $count 1 }}
+                          {{ end }}
+                        {{ end }}
+
+                        {{ range $i, $g := $events }}
+                          {{ if and (lt $count 6) (eq ($g.String "competitions.0.status.type.name") "STATUS_SCHEDULED") }}
+                            {{ template "nfl-game" $g }}
+                            {{ $count = add $count 1 }}
+                          {{ end }}
+                        {{ end }}
+
+                        {{ range $i, $g := $events }}
+                          {{ if and (lt $count 6) (not (or (eq ($g.String "competitions.0.status.type.name") "STATUS_IN_PROGRESS") (eq ($g.String "competitions.0.status.type.name") "STATUS_SCHEDULED"))) }}
+                            {{ template "nfl-game" $g }}
+                            {{ $count = add $count 1 }}
+                          {{ end }}
+                        {{ end }}
+                      </ul>
+
+                      <ul class="all" style="list-style:none;padding:0;margin:0;display:none">
+                        {{ range $i, $g := $events }}
+                          {{ if eq ($g.String "competitions.0.status.type.name") "STATUS_IN_PROGRESS" }}
+                            {{ template "nfl-game" $g }}
+                          {{ end }}
+                        {{ end }}
+
+                        {{ range $i, $g := $events }}
+                          {{ if eq ($g.String "competitions.0.status.type.name") "STATUS_SCHEDULED" }}
+                            {{ template "nfl-game" $g }}
+                          {{ end }}
+                        {{ end }}
+
+                        {{ range $i, $g := $events }}
+                          {{ if not (or (eq ($g.String "competitions.0.status.type.name") "STATUS_IN_PROGRESS") (eq ($g.String "competitions.0.status.type.name") "STATUS_SCHEDULED")) }}
+                            {{ template "nfl-game" $g }}
+                          {{ end }}
+                        {{ end }}
+                      </ul>
+
+                      {{ if gt (len $events) 6 }}
+                        <label for="{{ $wid }}-cb" style="position:absolute;bottom:0px;right:0;cursor:pointer;color:var(--glance-accent-color);font-size:16px;padding:5px;">
+                          <span style="display:inline-block;transition:transform .2s">▼</span>
+                        </label>
+                      {{ end }}
+                      <style>
+                        #{{ $wid }}-cb:not(:checked) ~ .all { display:none!important }
+                        #{{ $wid }}-cb:checked ~ .visible { display:none!important }
+                        #{{ $wid }}-cb:checked ~ .all { display:block!important }
+                        #{{ $wid }}-cb:checked ~ label span { transform:rotate(180deg)!important }
+                      </style>
+                    </div>
+                  {{ end }}
+
+                  {{ define "nfl-game" }}
+                    {{ $state := .String "competitions.0.status.type.name" }}
+                    {{ $away := index (.Array "competitions.0.competitors") 0 }}
+                    {{ $home := index (.Array "competitions.0.competitors") 1 }}
+                    {{ $awayRec := "" }}
+                    {{ if gt (len ($away.Array "records")) 0 }}{{ $awayRec = (index ($away.Array "records") 0).String "summary" }}{{ end }}
+                    {{ $homeRec := "" }}
+                    {{ if gt (len ($home.Array "records")) 0 }}{{ $homeRec = (index ($home.Array "records") 0).String "summary" }}{{ end }}
+
+                    {{ $awayScheduleLink := "" }}
+                    {{ range $away.Array "team.links" }}
+                      {{ if eq (.String "text") "Schedule" }}
+                        {{ $awayScheduleLink = .String "href" }}
+                      {{ end }}
+                    {{ end }}
+
+                    {{ $homeScheduleLink := "" }}
+                    {{ range $home.Array "team.links" }}
+                      {{ if eq (.String "text") "Schedule" }}
+                        {{ $homeScheduleLink = .String "href" }}
+                      {{ end }}
+                    {{ end }}
+
+                    {{ $gameLink := "" }}
+                    {{ range .Array "links" }}
+                      {{ $isGameLink := false }}
+                      {{ range .Array "rel" }}
+                        {{ if eq (printf "%v" .) "summary" }}
+                          {{ $isGameLink = true }}
+                        {{ end }}
+                      {{ end }}
+                      {{ if $isGameLink }}
+                        {{ $gameLink = .String "href" }}
+                      {{ end }}
+                    {{ end }}
+
+                    {{ $tooltip := "" }}
+                    {{ if ne $state "STATUS_SCHEDULED" }}
+                      {{ $awayBoxScore := "" }}
+                      {{ range $j,$ls := $away.Array "linescores" }}
+                        {{ if eq $j 0 }}{{ $awayBoxScore = printf "%s Q1: %s" $awayBoxScore ($ls.String "displayValue") }}
+                        {{ else if eq $j 1 }}{{ $awayBoxScore = printf "%s Q2: %s" $awayBoxScore ($ls.String "displayValue") }}
+                        {{ else if eq $j 2 }}{{ $awayBoxScore = printf "%s Q3: %s" $awayBoxScore ($ls.String "displayValue") }}
+                        {{ else if eq $j 3 }}{{ $awayBoxScore = printf "%s Q4: %s" $awayBoxScore ($ls.String "displayValue") }}
+                        {{ else }}{{ $awayBoxScore = printf "%s OT: %s" $awayBoxScore ($ls.String "displayValue") }}{{ end }}
+                      {{ end }}
+
+                      {{ $homeBoxScore := "" }}
+                      {{ range $j,$ls := $home.Array "linescores" }}
+                        {{ if eq $j 0 }}{{ $homeBoxScore = printf "%s Q1: %s" $homeBoxScore ($ls.String "displayValue") }}
+                        {{ else if eq $j 1 }}{{ $homeBoxScore = printf "%s Q2: %s" $homeBoxScore ($ls.String "displayValue") }}
+                        {{ else if eq $j 2 }}{{ $homeBoxScore = printf "%s Q3: %s" $homeBoxScore ($ls.String "displayValue") }}
+                        {{ else if eq $j 3 }}{{ $homeBoxScore = printf "%s Q4: %s" $homeBoxScore ($ls.String "displayValue") }}
+                        {{ else }}{{ $homeBoxScore = printf "%s OT: %s" $homeBoxScore ($ls.String "displayValue") }}{{ end }}
+                      {{ end }}
+
+                      {{ $gameLeaders := "" }}
+                      {{ range .Array "competitions.0.leaders" }}
+                        {{ if eq (.String "name") "passingYards" }}
+                          {{ range .Array "leaders" }}
+                            {{ $gameLeaders = printf "%sPassing: %s (%s)\n" $gameLeaders (.String "athlete.shortName") (.String "displayValue") }}
+                          {{ end }}
+                        {{ else if eq (.String "name") "rushingYards" }}
+                          {{ range .Array "leaders" }}
+                            {{ $gameLeaders = printf "%sRushing: %s (%s)\n" $gameLeaders (.String "athlete.shortName") (.String "displayValue") }}
+                          {{ end }}
+                        {{ else if eq (.String "name") "receivingYards" }}
+                          {{ range .Array "leaders" }}
+                            {{ $gameLeaders = printf "%sReceiving: %s (%s)\n" $gameLeaders (.String "athlete.shortName") (.String "displayValue") }}
+                          {{ end }}
+                        {{ end }}
+                      {{ end }}
+
+                      {{ $tooltip = printf "%s Box:%s\n%s Box:%s\n\nGame Leaders:\n%s" ($away.String "team.abbreviation") $awayBoxScore ($home.String "team.abbreviation") $homeBoxScore $gameLeaders }}
+                    {{ end }}
+
+                    <li style="display:flex;align-items:center;white-space:nowrap;gap:12px;padding:6px 0;border-bottom:1px solid var(--glance-divider);cursor:default" {{ if ne $state "STATUS_SCHEDULED" }}title="{{ $tooltip }}"{{ end }}>
+                      <span style="display:flex;align-items:center;flex:1;justify-content:space-between;">
+                        {{ if $awayScheduleLink }}
+                          <a href="{{ $awayScheduleLink }}" target="_blank" style="text-decoration:none;color:inherit;display:flex;align-items:center;">
+                            <img src="{{ if $away.String "team.logo" }}{{ $away.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $away.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;cursor:pointer;"/>
+                          </a>
+                        {{ else }}
+                          <img src="{{ if $away.String "team.logo" }}{{ $away.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $away.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;"/>
+                        {{ end }}
+                        <span style="display:flex;flex-direction:column;flex:1;">
+                          <span style="font-weight:bold;">{{ $away.String "team.abbreviation" }}</span>
+                          {{ if $awayRec }}<span style="font-size:0.7em;color:var(--glance-muted-text)">({{ $awayRec }})</span>{{ end }}
+                        </span>
+                        {{ if ne $state "STATUS_SCHEDULED" }}<span style="font-size:1.1em;font-weight:500;min-width:20px;text-align:right;">{{ $away.String "score" }}</span>{{ end }}
+                      </span>
+                      {{ if $gameLink }}
+                        <a href="{{ $gameLink }}" target="_blank" style="text-decoration:none;color:inherit;">
+                          <span style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;margin:0 8px;cursor:pointer;">
+                            <span>
+                              {{ if eq $state "STATUS_IN_PROGRESS" }}
+                                {{ $period := .String "competitions.0.status.period" }}
+                                <span style="font-size:0.85em;font-weight:500;">{{ if eq $period "1" }}1st{{ else if eq $period "2" }}2nd{{ else if eq $period "3" }}3rd{{ else if eq $period "4" }}4th{{ else }}OT{{ end }} {{ .String "competitions.0.status.displayClock" }}</span>
+                              {{ else if eq $state "STATUS_SCHEDULED" }}
+                                <span style="font-size:0.85em;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
+                              {{ else }}
+                                <span style="font-size:0.85em;font-weight:500;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
+                              {{ end }}
+                            </span>
+
+                            {{ if .Exists "competitions.0.series" }}
+                              <span style="font-size:0.7em;color:var(--glance-accent-color);margin-top:5px;">{{ .String "competitions.0.series.summary" }}</span>
+                            {{ end }}
+                          </span>
+                        </a>
+                      {{ else }}
+                        <span style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;margin:0 8px;">
+                          <span>
+                            {{ if eq $state "STATUS_IN_PROGRESS" }}
+                              {{ $period := .String "competitions.0.status.period" }}
+                              <span style="font-size:0.85em;font-weight:500;">{{ if eq $period "1" }}1st{{ else if eq $period "2" }}2nd{{ else if eq $period "3" }}3rd{{ else if eq $period "4" }}4th{{ else }}OT{{ end }} {{ .String "competitions.0.status.displayClock" }}</span>
+                            {{ else if eq $state "STATUS_SCHEDULED" }}
+                              <span style="font-size:0.85em;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
+                            {{ else }}
+                              <span style="font-size:0.85em;font-weight:500;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
+                            {{ end }}
+                          </span>
+
+                          {{ if .Exists "competitions.0.series" }}
+                            <span style="font-size:0.7em;color:var(--glance-accent-color);margin-top:5px;">{{ .String "competitions.0.series.summary" }}</span>
+                          {{ end }}
+                        </span>
+                      {{ end }}
+                      <span style="display:flex;align-items:center;flex:1;justify-content:space-between;">
+                        {{ if $homeScheduleLink }}
+                          <a href="{{ $homeScheduleLink }}" target="_blank" style="text-decoration:none;color:inherit;display:flex;align-items:center;">
+                            <img src="{{ if $home.String "team.logo" }}{{ $home.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $home.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;cursor:pointer;"/>
+                          </a>
+                        {{ else }}
+                          <img src="{{ if $home.String "team.logo" }}{{ $home.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $home.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;"/>
+                        {{ end }}
+                        <span style="display:flex;flex-direction:column;flex:1;">
+                          <span style="font-weight:bold;">{{ $home.String "team.abbreviation" }}</span>
+                          {{ if $homeRec }}<span style="font-size:0.7em;color:var(--glance-muted-text)">({{ $homeRec }})</span>{{ end }}
+                        </span>
+                        {{ if ne $state "STATUS_SCHEDULED" }}<span style="font-size:1.1em;font-weight:500;min-width:20px;text-align:right;">{{ $home.String "score" }}</span>{{ end }}
+                      </span>
+                    </li>
+                  {{ end }}
+#            - type: group if you want to group the widgets into tab, then delete the max-columns
+            - type: split-column
+              max-columns: 1
+              widgets:
+                - type: custom-api
+                  title: Next Race
+                  cache: 5m
+                  url: ${F1_API_URL}/f1/next_race/
+                  template: |
+                    <div class="flex flex-column gap-10">
+                      {{ $session := index (.JSON.Array "race") 0 }}
+                      <p class="size-h5">
+                        {{ .JSON.String "season" }}, Round {{ .JSON.String "round" }}
+                      </p>
+
+                      <div class="margin-block-4">
+                        <p class="color-highlight">{{ $session.String "raceName" }}</p>
+                        <p class="color-primary">
+                          <span>
+                            {{ .JSON.String "next_event.session" }}
+                          </span>
+                          {{ $datetime := .JSON.String "next_event.datetime" }}
+                          <span
+                            class="color-highlight"
+                            {{ parseRelativeTime "rfc3339" $datetime }}
+                          ></span>
+                        </p>
+                        <p class="size-h5">
+                          {{ .JSON.String "next_event.date" }} @  {{ .JSON.String "next_event.time" }}
+                        </p>
+
+                        <div style="margin-block: 1rem;">
+                          <img
+                            src="${F1_API_URL}/f1/next_map/"
+                            onerror="this.style.display='none'"
+                            style="max-width: 100%; height: auto; border-radius: 8px;"
+                          />
+                        </div>
+
+                        <p class="color-highlight">
+                          Circuit Details
+                        </p>
+                        <p class="size-h6">
+                          Name: {{ $session.String "circuit.circuitName" }}
+                        </p>
+                        <p class="size-h6">
+                          Lap Record: {{ $session.String "circuit.lapRecord" }}, {{ $session.String "circuit.fastestLapDriverName" }} ({{ $session.String "circuit.fastestLapYear"}})
+                        </p>
+                        <p class="size-h6">
+                          Length: {{ $session.String "laps" }} laps @ {{ $session.String "circuit.circuitLengthKm" }} KMs
+                        </p>
+                      </div>
+                    </div>
+
+                - type: custom-api
+                  title: Last Race Results
+                  cache: 1d
+                  url: https://f1api.dev/api/current/last/race
+                  template: |
+                    <div class="flex flex-column gap-10">
+                      <p class="size-h5">{{ .JSON.String "races.raceName" }}</p>
+                      <ul class="list collapsible-container" data-collapse-after="5">
+                        {{ range $i, $v := .JSON.Array "races.results" }}
+                        <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                          <span class="grow min-width-0">{{ .String "position" }}. {{ .String "driver.shortName" }}</span>
+                          <span class="shrink-0 text-right">{{ .String "time" }}</span>
+                        </li>
+                        {{ end }}
+                      </ul>
+                    </div>
+
+                - type: custom-api
+                  title: Drivers Standings
+                  cache: 5m
+                  url: ${F1_API_URL}/f1/drivers_standings/
+                  template: |
+                    <ul class="list collapsible-container" data-collapse-after="5">
+                      {{ range $i, $v := .JSON.Array "drivers" }}
+                      <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                        <div class="grow min-width-0">
+                          <span>{{ .String "position" }}. {{ .String "surname" }} <img src="https://flagcdn.com/w20/{{ .String "flag" }}.png"
+                                     alt=""
+                                     style="width: 20px; height: 14px; object-fit: cover; vertical-align: middle"
+                                     class="inline-block rounded-sm" /> </span>
+                          {{ $id := .String "teamId" }}
+                            <span class="size-h6">
+                              ( {{- if eq $id "red_bull" -}}Red Bull
+                              {{- else if eq $id "aston_martin" -}}Aston Martin
+                              {{- else if eq $id "mercedes" -}}Mercedes
+                              {{- else if eq $id "ferrari" -}}Ferrari
+                              {{- else if eq $id "mclaren" -}}McLaren
+                              {{- else if eq $id "williams" -}}Williams
+                              {{- else if eq $id "alpine" -}}Alpine
+                              {{- else if eq $id "haas" -}}Haas
+                              {{- else if eq $id "rb" -}}RB
+                              {{- else if eq $id "sauber" -}}Sauber
+                              {{- else -}}{{ $id }}{{- end -}})
+                            </span>
+                        </div>
+                        <span class="shrink-0 text-right">{{ .String "points" }}</span>
+                      </li>
+                      {{ end }}
+                    </ul>
+
+                - type: custom-api
+                  title: Constructors Standings
+                  cache: 5m
+                  url: ${F1_API_URL}/f1/constructors_standings/
+                  template: |
+                    <ul class="list collapsible-container" data-collapse-after="5">
+                      {{ range $i, $v := .JSON.Array "constructors" }}
+                      <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                        <span class="grow min-width-0">
+                          {{ .String "position" }}. {{ .String "team" }}<span style="margin-left: 2px;">
+                            <img src="https://flagcdn.com/w20/{{ .String "flag" }}.png"
+                                 alt=""
+                                 style="width: 20px; height: 14px; object-fit: cover; vertical-align: middle"
+                                 class="inline-block rounded-sm" />
+                          </span>
+                        </span>
+                        <span class="shrink-0 text-right">{{ .String "points" }}</span>
+                      </li>
+                      {{ end }}
+                    </ul>
+            - type: custom-api
+              title: MLB SCOREBOARD
+              url: "https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1&hydrate=linescore(runners),team"
+              cache: 15s
+              template: |
+                {{ $dates := .JSON.Array "dates" }}
+                {{ if eq (len $dates) 0 }}
+                  <div style="padding:8px;text-align:center;">No games scheduled today.</div>
+                {{ else }}
+                  {{ $games := (index $dates 0).Array "games" }}
+                  <ul class="list list-gap-10 collapsible-container" data-collapse-after="5">{{ range $games }}{{ if eq (.String "status.abstractGameState") "Live" }}{{ template "row" . }}{{ end }}{{ end }}{{ range $games }}{{ if eq (.String "status.abstractGameState") "Preview" }}{{ template "row" . }}{{ end }}{{ end }}{{ range $games }}{{ $abs := .String "status.abstractGameState" }}{{ if and (ne $abs "Live") (ne $abs "Preview") }}{{ template "row" . }}{{ end }}{{ end }}</ul>
+                {{ end }}
+                {{ define "row" }}
+                  {{/* --- AWAY SIDE --- */}}
+                  {{ $awayAbr  := .String "teams.away.team.abbreviation" }}
+                  {{ $awayCode := .String "teams.away.team.fileCode" }}
+                  {{ $awayRecW := .Int    "teams.away.leagueRecord.wins" }}
+                  {{ $awayRecL := .Int    "teams.away.leagueRecord.losses" }}
+                  {{ $awaySc   := .Int    "teams.away.score" }}
+                  {{ $awayId   := .Int    "teams.away.team.id" }}
+                  {{/* --- HOME SIDE --- */}}
+                  {{ $homeAbr  := .String "teams.home.team.abbreviation" }}
+                  {{ $homeCode := .String "teams.home.team.fileCode" }}
+                  {{ $homeRecW := .Int    "teams.home.leagueRecord.wins" }}
+                  {{ $homeRecL := .Int    "teams.home.leagueRecord.losses" }}
+                  {{ $homeSc   := .Int    "teams.home.score" }}
+                  {{ $homeId   := .Int    "teams.home.team.id" }}
+                  {{/* status & linescore */}}
+                  {{ $abs             := .String "status.abstractGameState" }}
+                  {{ $detailed        := .String "status.detailedState" }}
+                  {{ $live            := eq $abs "Live" }}
+                  {{ $inningSt        := .String "linescore.inningState" }}
+                  {{ $inningN         := .Int    "linescore.currentInning" }}
+                  {{ $seriesDesc      := .String "seriesDescription" }}
+                  {{ $seriesLabel     := .String "description" }}
+                  {{ $seriesGame      := .Int    "seriesGameNumber" }}
+                  {{ $isRegularSeries := or (eq $seriesDesc "Regular Season") (eq $seriesDesc "Regular Season 1") (eq $seriesDesc "Regular Season 2") (eq $seriesDesc "Regular Season 3") (eq $seriesDesc "Regular Season 4") }}
+                  {{ $isPlayoffSeries := and (ne $seriesDesc "") (not $isRegularSeries) }}
+                  {{/* offense & base occupancy */}}
+                  {{ $r1        := .Exists "linescore.offense.first" }}
+                  {{ $r2        := .Exists "linescore.offense.second" }}
+                  {{ $r3        := .Exists "linescore.offense.third" }}
+                  {{ $offTeamId := .Int    "linescore.offense.team.id" }}
+                  <li class="mlb-game-row"
+                      {{ if ne $abs "Preview" }}
+                        title="{{ $awayAbr }} Box:{{ range $i, $inning := (.Array "linescore.innings") }}
+                          {{ if lt $i 9 }}  Inning {{ add $i 1 }}: {{ $inning.Int "away.runs" }}{{ else }}  Inning {{ add $i 1 }}: {{ $inning.Int "away.runs" }}{{ end }}
+                        {{ end }}&#10;{{ $homeAbr }} Box:{{ range $i, $inning := (.Array "linescore.innings") }}
+                          {{ if lt $i 9 }}  Inning {{ add $i 1 }}: {{ $inning.Int "home.runs" }}{{ else }}  Inning {{ add $i 1 }}: {{ $inning.Int "home.runs" }}{{ end }}
+                        {{ end }}"
+                      {{ end }}>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <span style="display:flex;align-items:center;width:80px;white-space:nowrap;">
+                        <img src='{{ if eq $awayCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=24&w=24{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $awayCode }}.png&h=24&w=24{{ end }}'
+                            alt='{{ $awayAbr }}'
+                            style='width:24px;height:24px;margin-right:4px;'/>
+                        <span style="display:flex;flex-direction:column;margin-right:4px;">
+                          <span style="font-weight:bold;">{{ $awayAbr }}</span>
+                          <span style="font-size:0.7em;color:var(--glance-muted-text)">
+                            ({{ printf "%d-%d" $awayRecW $awayRecL }})
+                          </span>
+                        </span>
+                        {{ if ne $abs "Preview" }}
+                          <span style="margin-left:auto;font-size:1em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--glance-heading-text);">{{ $awaySc }}</span>
+                        {{ end }}
+                        {{ if and $live (eq $offTeamId $awayId) }}
+                          <svg width="20" height="20" viewBox="0 0 24 24" style="margin-left:4px;flex-shrink:0;">
+                            <rect x="6" y="6" width="12" height="12" fill="#808080" transform="rotate(45 12 12)"/>
+                            {{ if $r1 }}<circle cx="17" cy="12" r="2.5" fill="white"/>{{ end }}
+                            {{ if $r2 }}<circle cx="12" cy="7" r="2.5" fill="white"/>{{ end }}
+                            {{ if $r3 }}<circle cx="7" cy="12" r="2.5" fill="white"/>{{ end }}
+                          </svg>
+                        {{ end }}
+                      </span>
+                    <span style="text-align:center;width:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:0.9em;white-space:nowrap;">
+                      {{ if eq $abs "Preview" }}
+                        {{ $gameTime := (.String "gameDate" | parseTime "2006-01-02T15:04:05Z").In now.Location }}
+                        <span style="color:var(--glance-muted-text)">{{ printf "%02d:%02d" $gameTime.Hour $gameTime.Minute }}</span>
+                      {{ else if $live }}
+                        <span style="font-weight:500;">{{ printf "%s %d" $inningSt $inningN }}</span>
+                      {{ else if or (eq $detailed "Game Over") (eq $detailed "Final") }}
+                        <span style="font-size:1.1em;font-weight:500;">Final</span>
+                      {{ else }}
+                        <span>{{ $detailed }}</span>
+                      {{ end }}
+                      {{ if $isPlayoffSeries }}
+                        <span style="font-size:0.9em;color:var(--glance-accent-color);margin-top:0;">
+                          {{ if $seriesLabel }}
+                            {{ $seriesLabel }}
+                          {{ else if gt $seriesGame 0 }}
+                            {{ printf "%s (Game %d)" $seriesDesc $seriesGame }}
+                          {{ else }}
+                            {{ $seriesDesc }}
+                          {{ end }}
+                        </span>
+                      {{ end }}
+                    </span>
+                      <span style="display:flex;align-items:center;width:80px;justify-content:flex-end;white-space:nowrap;">
+                        {{ if and $live (eq $offTeamId $homeId) }}
+                          <svg width="20" height="20" viewBox="0 0 24 24" style="margin-right:4px;flex-shrink:0;">
+                            <rect x="6" y="6" width="12" height="12" fill="#808080" transform="rotate(45 12 12)"/>
+                            {{ if $r1 }}<circle cx="17" cy="12" r="2.5" fill="white"/>{{ end }}
+                            {{ if $r2 }}<circle cx="12" cy="7" r="2.5" fill="white"/>{{ end }}
+                            {{ if $r3 }}<circle cx="7" cy="12" r="2.5" fill="white"/>{{ end }}
+                          </svg>
+                        {{ end }}
+                        {{ if ne $abs "Preview" }}
+                          <span style="margin-left:auto;font-size:1em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--glance-heading-text);">{{ $homeSc }}</span>
+                        {{ end }}
+                        <span style="display:flex;flex-direction:column;margin-left:4px;text-align:right;">
+                          <span style="font-weight:bold;">{{ $homeAbr }}</span>
+                          <span style="font-size:0.7em;color:var(--glance-muted-text)">
+                            ({{ printf "%d-%d" $homeRecW $homeRecL }})
+                          </span>
+                        </span>
+                        <img src='{{ if eq $homeCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=24&w=24{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $homeCode }}.png&h=24&w=24{{ end }}'
+                            alt='{{ $homeAbr }}'
+                            style='width:24px;height:24px;margin-left:4px;'/>
+                      </span>
+                    </div>
+                  </li>
+                {{ end }}
+

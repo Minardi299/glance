@@ -1,0 +1,30 @@
+services:
+  glance:
+    container_name: glance
+    image: glanceapp/glance
+    labels:
+      glance.name: glance
+      glance.icon: si:glance
+      glance.url: https://dashboard.starb.ca
+      glance.description: Dashboard
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+      - ./assets:/app/assets
+      - /etc/localtime:/etc/localtime:ro
+      # Optionally, also mount docker socket if you want to use the docker containers widget
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 8085:8080
+    env_file: .env
+
+  f1_api:
+    container_name: f1_api
+    image: skyallinott/f1_api:latest
+    environment:
+      - TIMEZONE=America/Toronto
+      - TRACK_COLOUR=#e5d486
+      - EVENT_DETAIL=main
+    ports:
+      - 4463:4463
+    restart: unless-stopped

@@ -1,0 +1,8 @@
+.mlb-game-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--glance-divider);
+    white-space: normal;
+}
