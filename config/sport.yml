@@ -183,7 +183,7 @@
                     {{ $wid := printf "nfl-%d" now.UnixNano }}
                     <div id="{{ $wid }}" style="position:relative;padding-bottom:{{ if gt (len $events) 6 }}25px{{ else }}0px{{ end }};">
                       <input type="checkbox" id="{{ $wid }}-cb" style="display:none"/>
-                      <ul class="visible" style="list-style:none;padding:0;margin:0;">
+                      <ul class="list list-gap-10 visible" style="list-style:none;padding:0;margin:0;">
                         {{ $count := 0 }}
 
                         {{ range $i, $g := $events }}
@@ -208,7 +208,7 @@
                         {{ end }}
                       </ul>
 
-                      <ul class="all" style="list-style:none;padding:0;margin:0;display:none">
+                      <ul class="list list-gap-10 all" style="list-style:none;padding:0;margin:0;display:none">
                         {{ range $i, $g := $events }}
                           {{ if eq ($g.String "competitions.0.status.type.name") "STATUS_IN_PROGRESS" }}
                             {{ template "nfl-game" $g }}
@@ -318,72 +318,90 @@
                       {{ $tooltip = printf "%s Box:%s\n%s Box:%s\n\nGame Leaders:\n%s" ($away.String "team.abbreviation") $awayBoxScore ($home.String "team.abbreviation") $homeBoxScore $gameLeaders }}
                     {{ end }}
 
-                    <li style="display:flex;align-items:center;white-space:nowrap;gap:12px;padding:6px 0;border-bottom:1px solid var(--glance-divider);cursor:default" {{ if ne $state "STATUS_SCHEDULED" }}title="{{ $tooltip }}"{{ end }}>
-                      <span style="display:flex;align-items:center;flex:1;justify-content:space-between;">
-                        {{ if $awayScheduleLink }}
-                          <a href="{{ $awayScheduleLink }}" target="_blank" style="text-decoration:none;color:inherit;display:flex;align-items:center;">
-                            <img src="{{ if $away.String "team.logo" }}{{ $away.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $away.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;cursor:pointer;"/>
+                    {{ $currentLabel := .String "competitions.0.status.type.shortDetail" }}
+                    {{ if eq $state "STATUS_IN_PROGRESS" }}
+                      {{ $period := .String "competitions.0.status.period" }}
+                      {{ $clock := .String "competitions.0.status.displayClock" }}
+                      {{ if eq $period "1" }}{{ $currentLabel = printf "1st %s" $clock }}
+                      {{ else if eq $period "2" }}{{ $currentLabel = printf "2nd %s" $clock }}
+                      {{ else if eq $period "3" }}{{ $currentLabel = printf "3rd %s" $clock }}
+                      {{ else if eq $period "4" }}{{ $currentLabel = printf "4th %s" $clock }}
+                      {{ else }}{{ $currentLabel = printf "OT %s" $clock }}{{ end }}
+                    {{ end }}
+
+                    <li class="nfl-game-row" style="cursor:default" {{ if ne $state "STATUS_SCHEDULED" }}title="{{ $tooltip }}"{{ end }}>
+                    {{/* NHL-style: size-h3 headline + records row + optional series; then 50px logos + 25px scores */}}
+                    <table>
+                      <tr>
+                        <td>
+                          {{ if $gameLink }}
+                          <a target="_blank" class="size-h3 color-highlight block text-truncate" href="{{ $gameLink }}">
+                            {{ $away.String "team.displayName" }} vs {{ $home.String "team.displayName" }}
                           </a>
-                        {{ else }}
-                          <img src="{{ if $away.String "team.logo" }}{{ $away.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $away.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;"/>
-                        {{ end }}
-                        <span style="display:flex;flex-direction:column;flex:1;">
-                          <span style="font-weight:bold;">{{ $away.String "team.abbreviation" }}</span>
-                          {{ if $awayRec }}<span style="font-size:0.7em;color:var(--glance-muted-text)">({{ $awayRec }})</span>{{ end }}
-                        </span>
-                        {{ if ne $state "STATUS_SCHEDULED" }}<span style="font-size:1.1em;font-weight:500;min-width:20px;text-align:right;">{{ $away.String "score" }}</span>{{ end }}
-                      </span>
-                      {{ if $gameLink }}
-                        <a href="{{ $gameLink }}" target="_blank" style="text-decoration:none;color:inherit;">
-                          <span style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;margin:0 8px;cursor:pointer;">
-                            <span>
-                              {{ if eq $state "STATUS_IN_PROGRESS" }}
-                                {{ $period := .String "competitions.0.status.period" }}
-                                <span style="font-size:0.85em;font-weight:500;">{{ if eq $period "1" }}1st{{ else if eq $period "2" }}2nd{{ else if eq $period "3" }}3rd{{ else if eq $period "4" }}4th{{ else }}OT{{ end }} {{ .String "competitions.0.status.displayClock" }}</span>
-                              {{ else if eq $state "STATUS_SCHEDULED" }}
-                                <span style="font-size:0.85em;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
-                              {{ else }}
-                                <span style="font-size:0.85em;font-weight:500;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
-                              {{ end }}
-                            </span>
-
-                            {{ if .Exists "competitions.0.series" }}
-                              <span style="font-size:0.7em;color:var(--glance-accent-color);margin-top:5px;">{{ .String "competitions.0.series.summary" }}</span>
-                            {{ end }}
+                          {{ else }}
+                          <span class="size-h3 color-highlight block text-truncate">
+                            {{ $away.String "team.displayName" }} vs {{ $home.String "team.displayName" }}
                           </span>
-                        </a>
-                      {{ else }}
-                        <span style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;margin:0 8px;">
-                          <span>
-                            {{ if eq $state "STATUS_IN_PROGRESS" }}
-                              {{ $period := .String "competitions.0.status.period" }}
-                              <span style="font-size:0.85em;font-weight:500;">{{ if eq $period "1" }}1st{{ else if eq $period "2" }}2nd{{ else if eq $period "3" }}3rd{{ else if eq $period "4" }}4th{{ else }}OT{{ end }} {{ .String "competitions.0.status.displayClock" }}</span>
-                            {{ else if eq $state "STATUS_SCHEDULED" }}
-                              <span style="font-size:0.85em;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
-                            {{ else }}
-                              <span style="font-size:0.85em;font-weight:500;">{{ .String "competitions.0.status.type.shortDetail" }}</span>
-                            {{ end }}
-                          </span>
-
-                          {{ if .Exists "competitions.0.series" }}
-                            <span style="font-size:0.7em;color:var(--glance-accent-color);margin-top:5px;">{{ .String "competitions.0.series.summary" }}</span>
                           {{ end }}
-                        </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <span class="size-h6" style="color:var(--glance-muted-text)">
+                            {{ $away.String "team.abbreviation" }}{{ if $awayRec }} ({{ $awayRec }}){{ end }}
+                            &middot;
+                            {{ $home.String "team.abbreviation" }}{{ if $homeRec }} ({{ $homeRec }}){{ end }}
+                          </span>
+                        </td>
+                      </tr>
+                      {{ if .Exists "competitions.0.series" }}
+                      <tr>
+                        <td>
+                          <span style="font-size:0.9em;color:var(--glance-accent-color)">{{ .String "competitions.0.series.summary" }}</span>
+                        </td>
+                      </tr>
                       {{ end }}
-                      <span style="display:flex;align-items:center;flex:1;justify-content:space-between;">
-                        {{ if $homeScheduleLink }}
-                          <a href="{{ $homeScheduleLink }}" target="_blank" style="text-decoration:none;color:inherit;display:flex;align-items:center;">
-                            <img src="{{ if $home.String "team.logo" }}{{ $home.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $home.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;cursor:pointer;"/>
+                    </table>
+                    <table>
+                      <tr>
+                        <td>
+                          {{ if $awayScheduleLink }}
+                          <a href="{{ $awayScheduleLink }}" target="_blank" style="text-decoration:none;color:inherit;">
+                            <img style="float:left" width="50" height="auto" src="{{ if $away.String "team.logo" }}{{ $away.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $away.String "team.abbreviation" }}"/>
                           </a>
-                        {{ else }}
-                          <img src="{{ if $home.String "team.logo" }}{{ $home.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $home.String "team.abbreviation" }}" style="width:24px;height:24px;margin-right:6px;"/>
-                        {{ end }}
-                        <span style="display:flex;flex-direction:column;flex:1;">
-                          <span style="font-weight:bold;">{{ $home.String "team.abbreviation" }}</span>
-                          {{ if $homeRec }}<span style="font-size:0.7em;color:var(--glance-muted-text)">({{ $homeRec }})</span>{{ end }}
-                        </span>
-                        {{ if ne $state "STATUS_SCHEDULED" }}<span style="font-size:1.1em;font-weight:500;min-width:20px;text-align:right;">{{ $home.String "score" }}</span>{{ end }}
-                      </span>
+                          {{ else }}
+                          <img style="float:left" width="50" height="auto" src="{{ if $away.String "team.logo" }}{{ $away.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $away.String "team.abbreviation" }}"/>
+                          {{ end }}
+                        </td>
+                        <td>
+                          {{ if ne $state "STATUS_SCHEDULED" }}
+                          <p style="font-size:25px">{{ $away.String "score" }}</p>
+                          {{ end }}
+                        </td>
+                        <td>
+                          {{ if ne $state "STATUS_SCHEDULED" }}
+                          <p style="font-size:25px">-</p>
+                          {{ end }}
+                        </td>
+                        <td>
+                          {{ if ne $state "STATUS_SCHEDULED" }}
+                          <p style="font-size:25px">{{ $home.String "score" }}</p>
+                          {{ end }}
+                        </td>
+                        <td>
+                          {{ if $homeScheduleLink }}
+                          <a href="{{ $homeScheduleLink }}" target="_blank" style="text-decoration:none;color:inherit;">
+                            <img style="float:left" width="50" height="auto" src="{{ if $home.String "team.logo" }}{{ $home.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $home.String "team.abbreviation" }}"/>
+                          </a>
+                          {{ else }}
+                          <img style="float:left" width="50" height="auto" src="{{ if $home.String "team.logo" }}{{ $home.String "team.logo" }}{{ else }}https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png{{ end }}" alt="{{ $home.String "team.abbreviation" }}"/>
+                          {{ end }}
+                        </td>
+                        <td>
+                          {{ $currentLabel }}
+                        </td>
+                      </tr>
+                    </table>
                     </li>
                   {{ end }}
 #            - type: group if you want to group the widgets into tab, then delete the max-columns

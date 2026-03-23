@@ -1,5 +1,6 @@
 /* Stack like NHL scoreboard tables; spacing comes from .list-gap-10 */
-.mlb-game-row {
+.mlb-game-row,
+.nfl-game-row {
     border-bottom: 1px solid var(--glance-divider);
     white-space: normal;
 }
