@@ -537,6 +537,7 @@
                   {{ $homeRecL := .Int    "teams.home.leagueRecord.losses" }}
                   {{ $homeSc   := .Int    "teams.home.score" }}
                   {{ $homeId   := .Int    "teams.home.team.id" }}
+                  {{ $gamePk   := .Int    "gamePk" }}
                   {{/* status & linescore */}}
                   {{ $abs             := .String "status.abstractGameState" }}
                   {{ $detailed        := .String "status.detailedState" }}
@@ -561,42 +562,26 @@
                           {{ if lt $i 9 }}  Inning {{ add $i 1 }}: {{ $inning.Int "home.runs" }}{{ else }}  Inning {{ add $i 1 }}: {{ $inning.Int "home.runs" }}{{ end }}
                         {{ end }}"
                       {{ end }}>
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <span style="display:flex;align-items:center;width:80px;white-space:nowrap;">
-                        <img src='{{ if eq $awayCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=24&w=24{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $awayCode }}.png&h=24&w=24{{ end }}'
-                            alt='{{ $awayAbr }}'
-                            style='width:24px;height:24px;margin-right:4px;'/>
-                        <span style="display:flex;flex-direction:column;margin-right:4px;">
-                          <span style="font-weight:bold;">{{ $awayAbr }}</span>
-                          <span style="font-size:0.7em;color:var(--glance-muted-text)">
-                            ({{ printf "%d-%d" $awayRecW $awayRecL }})
-                          </span>
+                  {{/* Match NHL layout: headline row + score row (size-h3, 50px logos, 25px scores) */}}
+                  <table>
+                    <tr>
+                      <td>
+                        <a target="_blank" class="size-h3 color-highlight block text-truncate" href="https://www.mlb.com/gameday/{{ $gamePk }}">
+                          {{ $awayAbr }} vs {{ $homeAbr }}
+                        </a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <span class="size-h6" style="color:var(--glance-muted-text)">
+                          {{ $awayAbr }} ({{ printf "%d-%d" $awayRecW $awayRecL }}) &middot; {{ $homeAbr }} ({{ printf "%d-%d" $homeRecW $homeRecL }})
                         </span>
-                        {{ if ne $abs "Preview" }}
-                          <span style="margin-left:auto;font-size:1em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--glance-heading-text);">{{ $awaySc }}</span>
-                        {{ end }}
-                        {{ if and $live (eq $offTeamId $awayId) }}
-                          <svg width="20" height="20" viewBox="0 0 24 24" style="margin-left:4px;flex-shrink:0;">
-                            <rect x="6" y="6" width="12" height="12" fill="#808080" transform="rotate(45 12 12)"/>
-                            {{ if $r1 }}<circle cx="17" cy="12" r="2.5" fill="white"/>{{ end }}
-                            {{ if $r2 }}<circle cx="12" cy="7" r="2.5" fill="white"/>{{ end }}
-                            {{ if $r3 }}<circle cx="7" cy="12" r="2.5" fill="white"/>{{ end }}
-                          </svg>
-                        {{ end }}
-                      </span>
-                    <span style="text-align:center;width:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:0.9em;white-space:nowrap;">
-                      {{ if eq $abs "Preview" }}
-                        {{ $gameTime := (.String "gameDate" | parseTime "2006-01-02T15:04:05Z").In now.Location }}
-                        <span style="color:var(--glance-muted-text)">{{ printf "%02d:%02d" $gameTime.Hour $gameTime.Minute }}</span>
-                      {{ else if $live }}
-                        <span style="font-weight:500;">{{ printf "%s %d" $inningSt $inningN }}</span>
-                      {{ else if or (eq $detailed "Game Over") (eq $detailed "Final") }}
-                        <span style="font-size:1.1em;font-weight:500;">Final</span>
-                      {{ else }}
-                        <span>{{ $detailed }}</span>
-                      {{ end }}
-                      {{ if $isPlayoffSeries }}
-                        <span style="font-size:0.9em;color:var(--glance-accent-color);margin-top:0;">
+                      </td>
+                    </tr>
+                    {{ if $isPlayoffSeries }}
+                    <tr>
+                      <td>
+                        <span style="font-size:0.9em;color:var(--glance-accent-color)">
                           {{ if $seriesLabel }}
                             {{ $seriesLabel }}
                           {{ else if gt $seriesGame 0 }}
@@ -605,31 +590,63 @@
                             {{ $seriesDesc }}
                           {{ end }}
                         </span>
-                      {{ end }}
-                    </span>
-                      <span style="display:flex;align-items:center;width:80px;justify-content:flex-end;white-space:nowrap;">
-                        {{ if and $live (eq $offTeamId $homeId) }}
-                          <svg width="20" height="20" viewBox="0 0 24 24" style="margin-right:4px;flex-shrink:0;">
-                            <rect x="6" y="6" width="12" height="12" fill="#808080" transform="rotate(45 12 12)"/>
-                            {{ if $r1 }}<circle cx="17" cy="12" r="2.5" fill="white"/>{{ end }}
-                            {{ if $r2 }}<circle cx="12" cy="7" r="2.5" fill="white"/>{{ end }}
-                            {{ if $r3 }}<circle cx="7" cy="12" r="2.5" fill="white"/>{{ end }}
-                          </svg>
-                        {{ end }}
+                      </td>
+                    </tr>
+                    {{ end }}
+                  </table>
+                  <table>
+                    <tr>
+                      <td>
+                        <img style="float:left" width="50" height="auto" src='{{ if eq $awayCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=50&w=50{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $awayCode }}.png&h=50&w=50{{ end }}' alt='{{ $awayAbr }}'/>
+                      </td>
+                      <td>
                         {{ if ne $abs "Preview" }}
-                          <span style="margin-left:auto;font-size:1em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--glance-heading-text);">{{ $homeSc }}</span>
+                          <p style="font-size:25px">{{ $awaySc }}</p>
                         {{ end }}
-                        <span style="display:flex;flex-direction:column;margin-left:4px;text-align:right;">
-                          <span style="font-weight:bold;">{{ $homeAbr }}</span>
-                          <span style="font-size:0.7em;color:var(--glance-muted-text)">
-                            ({{ printf "%d-%d" $homeRecW $homeRecL }})
-                          </span>
-                        </span>
-                        <img src='{{ if eq $homeCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=24&w=24{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $homeCode }}.png&h=24&w=24{{ end }}'
-                            alt='{{ $homeAbr }}'
-                            style='width:24px;height:24px;margin-left:4px;'/>
-                      </span>
-                    </div>
+                      </td>
+                      <td>
+                        {{ if ne $abs "Preview" }}
+                          <p style="font-size:25px">-</p>
+                        {{ end }}
+                      </td>
+                      <td>
+                        {{ if ne $abs "Preview" }}
+                          <p style="font-size:25px">{{ $homeSc }}</p>
+                        {{ end }}
+                      </td>
+                      <td>
+                        <img style="float:left" width="50" height="auto" src='{{ if eq $homeCode "ana" }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/laa.png&h=50&w=50{{ else }}https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/{{ $homeCode }}.png&h=50&w=50{{ end }}' alt='{{ $homeAbr }}'/>
+                      </td>
+                      <td>
+                        {{ if eq $abs "Preview" }}
+                          {{ $gameTime := (.String "gameDate" | parseTime "2006-01-02T15:04:05Z").In now.Location }}
+                          <span style="color:var(--glance-muted-text)">{{ printf "%02d:%02d" $gameTime.Hour $gameTime.Minute }}</span>
+                        {{ else if $live }}
+                          <span style="font-weight:500;">{{ printf "%s %d" $inningSt $inningN }}</span>
+                          {{ if and $live (eq $offTeamId $awayId) }}
+                            <svg width="20" height="20" viewBox="0 0 24 24" style="display:block;margin-top:4px;">
+                              <rect x="6" y="6" width="12" height="12" fill="#808080" transform="rotate(45 12 12)"/>
+                              {{ if $r1 }}<circle cx="17" cy="12" r="2.5" fill="white"/>{{ end }}
+                              {{ if $r2 }}<circle cx="12" cy="7" r="2.5" fill="white"/>{{ end }}
+                              {{ if $r3 }}<circle cx="7" cy="12" r="2.5" fill="white"/>{{ end }}
+                            </svg>
+                          {{ end }}
+                          {{ if and $live (eq $offTeamId $homeId) }}
+                            <svg width="20" height="20" viewBox="0 0 24 24" style="display:block;margin-top:4px;">
+                              <rect x="6" y="6" width="12" height="12" fill="#808080" transform="rotate(45 12 12)"/>
+                              {{ if $r1 }}<circle cx="17" cy="12" r="2.5" fill="white"/>{{ end }}
+                              {{ if $r2 }}<circle cx="12" cy="7" r="2.5" fill="white"/>{{ end }}
+                              {{ if $r3 }}<circle cx="7" cy="12" r="2.5" fill="white"/>{{ end }}
+                            </svg>
+                          {{ end }}
+                        {{ else if or (eq $detailed "Game Over") (eq $detailed "Final") }}
+                          <span style="font-size:1.1em;font-weight:500;">Final</span>
+                        {{ else }}
+                          <span>{{ $detailed }}</span>
+                        {{ end }}
+                      </td>
+                    </tr>
+                  </table>
                   </li>
                 {{ end }}
 
